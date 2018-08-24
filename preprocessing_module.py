@@ -34,24 +34,7 @@ class BeanTechDataset(Dataset):
         return sample
 
 
-def process_original_data(path_to_folder, dataset_name, images_type: float, transform):
-    """
-    Processes the original data and returns the same data organized in one or more BeanTechDataset object(s):\n
-    - one BeanTechDataset object containing all the data if dataset_name = 'all'
-    - one BeanTechDataset object containing only albedo data if dataset_name = 'albedo'
-    - one BeanTechDataset object containing only raw data if dataset_name = 'nsew'
-    - two BeanTechDataset objects (one for 'Albedo' images, one for all other images) if dataset_name = 'albedo_nsew';
-    - five BeanTechDataset objects (one for 'Albedo' images, one for 'East' images, one for 'North' images, one for
-      'South' images, one for 'West' images) if dataset_name = 'albedo_nsew_split'.
-
-    :param path_to_folder: path to the folder containing the images
-    :type path_to_folder: string
-    :param dataset_name: name of the dataset
-    :type dataset_name: string
-    :param images_type: type of images ('OK' or 'KO')
-    :type images_type: float
-    :return: one, two or five BeanTechDataset objects, depending on the value of number_of_desired_datasets
-    """
+def process_original_data(path_to_folder, dataset_name, images_type: float):
     # create empty lists
     names_all, names_albedo, names_other, names_east, names_north, names_south, names_west = ([] for i in range(7))
     arrays_all, arrays_albedo, arrays_other, arrays_east, arrays_north, arrays_south, arrays_west = ([] for i in range(7))
@@ -110,27 +93,73 @@ def process_original_data(path_to_folder, dataset_name, images_type: float, tran
     if dataset_name == 'all':
         labels = [float(images_type) for i in range(len(names_all))]
         dataset_all = BeanTechDataset(arrays_all, labels, names_all)
-        return dataset_all
+        return [arrays_all], [labels], [names_all]
     elif dataset_name == 'albedo_nsew':
-        labels = [float(images_type) for i in range(len(names_albedo))]
-        dataset_albedo = BeanTechDataset(arrays_albedo, labels, names_albedo, transform=transform)
-        labels = [float(images_type) for i in range(len(names_other))]
-        dataset_other = BeanTechDataset(arrays_other, labels, names_other, transform=transform)
-        return dataset_albedo, dataset_other
+        labels_albedo = [float(images_type) for i in range(len(names_albedo))]
+        labels_other = [float(images_type) for i in range(len(names_other))]
+        array = [arrays_albedo, arrays_other]
+        array_names = [names_albedo, names_other]
+        array_labels = [labels_albedo, labels_other]
+        return array, array_labels, array_names
     elif dataset_name == 'albedo_nsew_split':
         labels = [float(images_type) for i in range(len(names_albedo))]
-        dataset_albedo = BeanTechDataset(arrays_albedo, labels, names_albedo, transform=transform)
-        dataset_east = BeanTechDataset(arrays_east, labels, names_east, transform=transform)
-        dataset_north = BeanTechDataset(arrays_north, labels, names_north, transform=transform)
-        dataset_south = BeanTechDataset(arrays_south, labels, names_south, transform=transform)
-        dataset_west = BeanTechDataset(arrays_west, labels, names_west, transform=transform)
-        return dataset_albedo, dataset_east, dataset_north, dataset_south, dataset_west
+        array = [arrays_albedo, arrays_east, arrays_north, arrays_south, arrays_west]
+        array_names = [names_albedo, names_east, names_north, names_south, names_west]
+        array_labels = [labels for i in range(5)]
+        return array, array_labels, array_names
     elif dataset_name == 'albedo':
         labels = [float(images_type) for i in range(len(names_albedo))]
-        dataset_albedo = BeanTechDataset(arrays_albedo, labels, names_albedo, transform=transform)
-        return dataset_albedo
+        return [arrays_albedo], [labels], [names_albedo]
     elif dataset_name == 'nsew':
         labels = [float(images_type) for i in range(len(names_other))]
-        dataset_other = BeanTechDataset(arrays_other, labels, names_other, transform=transform)
-        return dataset_other
+        return [arrays_other], [labels], [names_other]
+
+
+def build_datasets(path_to_folder_ok, path_to_folder_ko, dataset_name, transform=None, split=False):
+    """
+    Processes the original data and returns the same data organized in one or more BeanTechDataset object(s):\n
+    - one BeanTechDataset object containing all the data if dataset_name = 'all'
+    - one BeanTechDataset object containing only albedo data if dataset_name = 'albedo'
+    - one BeanTechDataset object containing only raw data if dataset_name = 'nsew'
+    - two BeanTechDataset objects (one for 'Albedo' images, one for all other images) if dataset_name = 'albedo_nsew';
+    - five BeanTechDataset objects (one for 'Albedo' images, one for 'East' images, one for 'North' images, one for
+      'South' images, one for 'West' images) if dataset_name = 'albedo_nsew_split'. iF split is true, it returns a list
+      containing two tuples with the number of datasets specified above.
+
+    :param path_to_folder_ok: path to the folder containing the ok images
+    :type path_to_folder_ok: string
+    :param path_to_folder_ko: path to the folder containing the ko images
+    :type path_to_folder_ko: string
+    :param dataset_name: name of the dataset
+    :type dataset_name: string
+    :param tranform: tranformation to apply
+    :type images_type: float
+    :param split: if true splits ok and ko data
+    :type images_type: bool
+    """
+    array_ok, array_labels_ok, array_names_ok = process_original_data(path_to_folder_ok, dataset_name, 0.0)
+    array_ko, array_labels_ko, array_names_ko = process_original_data(path_to_folder_ko, dataset_name, 1.0)
+    if split:
+        datasets_ok = build_datasets_from_array(array_ok, array_labels_ok, array_names_ok, transform)
+        datasets_ko = build_datasets_from_array(array_ko, array_labels_ko, array_names_ko, transform)
+        return [datasets_ok, datasets_ko]
+    else:
+        array = merge_lists_array(array_ok, array_ko)
+        array_labels = merge_lists_array(array_labels_ok, array_labels_ko)
+        array_names = merge_lists_array(array_names_ok, array_names_ko)
+        return build_datasets_from_array(array, array_labels, array_names, transform)
+
+
+def build_datasets_from_array(array, array_labels, array_names, transform):
+    datasets = ()
+    for images, lables, names in zip(array, array_labels, array_names):
+        datasets += (BeanTechDataset(images, lables, names, transform),)
+    return datasets
+
+def merge_lists_array(array1, array2):
+    concat = []
+    for list1, list2 in zip(array1, array2):
+        concat.append(list1+list2)
+    return concat
+
 
