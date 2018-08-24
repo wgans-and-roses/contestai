@@ -11,8 +11,8 @@ def build_dirname(opt, keys):
     th = time.asctime().split(' ')
     date_time = '[' + th[1] + '_' + th[2] + '_' + th[3] + ']'
     params = str(sub_dict).replace(" ", "")
-    filename = date_time + '_par_' + params
-    return filename
+    dirname = date_time + '_par_' + params
+    return dirname
 
 
 def make_save_directory(opt, dirname):
