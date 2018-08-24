@@ -34,7 +34,7 @@ class BeanTechDataset(Dataset):
         return sample
 
 
-def process_original_data(path_to_folder, dataset_name, images_type, transform):
+def process_original_data(path_to_folder, dataset_name, images_type: float, transform):
     """
     Processes the original data and returns the same data organized in one or more BeanTechDataset object(s):\n
     - one BeanTechDataset object containing all the data if dataset_name = 'all'
@@ -49,7 +49,7 @@ def process_original_data(path_to_folder, dataset_name, images_type, transform):
     :param dataset_name: name of the dataset
     :type dataset_name: string
     :param images_type: type of images ('OK' or 'KO')
-    :type images_type: string
+    :type images_type: float
     :return: one, two or five BeanTechDataset objects, depending on the value of number_of_desired_datasets
     """
     # create empty lists
@@ -108,17 +108,17 @@ def process_original_data(path_to_folder, dataset_name, images_type, transform):
 
     # create datasets
     if dataset_name == 'all':
-        labels = [images_type for i in range(len(names_all))]
+        labels = [float(images_type) for i in range(len(names_all))]
         dataset_all = BeanTechDataset(arrays_all, labels, names_all)
         return dataset_all
     elif dataset_name == 'albedo_nsew':
-        labels = [images_type for i in range(len(names_albedo))]
+        labels = [float(images_type) for i in range(len(names_albedo))]
         dataset_albedo = BeanTechDataset(arrays_albedo, labels, names_albedo, transform=transform)
-        labels = [images_type for i in range(len(names_other))]
+        labels = [float(images_type) for i in range(len(names_other))]
         dataset_other = BeanTechDataset(arrays_other, labels, names_other, transform=transform)
         return dataset_albedo, dataset_other
     elif dataset_name == 'albedo_nsew_split':
-        labels = [images_type for i in range(len(names_albedo))]
+        labels = [float(images_type) for i in range(len(names_albedo))]
         dataset_albedo = BeanTechDataset(arrays_albedo, labels, names_albedo, transform=transform)
         dataset_east = BeanTechDataset(arrays_east, labels, names_east, transform=transform)
         dataset_north = BeanTechDataset(arrays_north, labels, names_north, transform=transform)
@@ -126,11 +126,11 @@ def process_original_data(path_to_folder, dataset_name, images_type, transform):
         dataset_west = BeanTechDataset(arrays_west, labels, names_west, transform=transform)
         return dataset_albedo, dataset_east, dataset_north, dataset_south, dataset_west
     elif dataset_name == 'albedo':
-        labels = [images_type for i in range(len(names_albedo))]
+        labels = [float(images_type) for i in range(len(names_albedo))]
         dataset_albedo = BeanTechDataset(arrays_albedo, labels, names_albedo, transform=transform)
         return dataset_albedo
     elif dataset_name == 'nsew':
-        labels = [images_type for i in range(len(names_other))]
+        labels = [float(images_type) for i in range(len(names_other))]
         dataset_other = BeanTechDataset(arrays_other, labels, names_other, transform=transform)
         return dataset_other
 
