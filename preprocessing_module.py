@@ -1,7 +1,7 @@
 import os
 from torch.utils.data import Dataset
 from skimage import io
-
+from sklearn.model_selection import train_test_split
 
 class BeanTechDataset(Dataset):
     """BeanTech dataset."""
@@ -152,14 +152,24 @@ def build_datasets(path_to_folder_ok, path_to_folder_ko, dataset_name, transform
 
 def build_datasets_from_array(array, array_labels, array_names, transform):
     datasets = ()
-    for images, lables, names in zip(array, array_labels, array_names):
-        datasets += (BeanTechDataset(images, lables, names, transform),)
+    for images, labels, names in zip(array, array_labels, array_names):
+        datasets += (BeanTechDataset(images, labels, names, transform),)
     return datasets
+
+
+def split(dataset: BeanTechDataset, test_size, random_state = None):
+    x_train, x_test, y_train, y_test, names_train, names_test = train_test_split(dataset.images_arrays_list,
+                                                                                 dataset.images_labels_list,
+                                                                                 dataset.images_names_list,
+                                                                                 test_size=test_size,
+                                                                                 random_state= random_state)
+
+    return BeanTechDataset(x_train, y_train, names_train, dataset.transform), BeanTechDataset(x_test, y_test, names_test, dataset.transform)
+
 
 def merge_lists_array(array1, array2):
     concat = []
     for list1, list2 in zip(array1, array2):
         concat.append(list1+list2)
     return concat
-
 

@@ -16,6 +16,8 @@ def build_dirname(opt, keys):
 
 
 def make_save_directory(opt, dirname):
+    if not os.path.exists(os.path.join(opt['save_path'], opt['model'])):
+        os.mkdir(os.path.join(opt['save_path'], opt['model']))
     savepath = os.path.join(opt['save_path'], opt['model'], dirname)
     os.mkdir(savepath)
     return savepath
