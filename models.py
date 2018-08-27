@@ -31,8 +31,8 @@ class Lenet(nn.Module):
                 nn.Conv2d(ci,co,ksz, padding=(1, 2), stride=(2, 4)),
                 #bn2(co),
                 nn.ReLU(True),
-                nn.MaxPool2d(psz,stride=psz, padding=1))
-                #nn.Dropout(opt['d']))
+                nn.MaxPool2d(psz,stride=psz, padding=1),
+                nn.Dropout(opt['d']))
 
         self.m = nn.Sequential(
             convbn(1,c1,5,3),
@@ -73,23 +73,24 @@ class Allcnn(nn.Module):
             return nn.Sequential(
                 nn.Conv2d(ci,co,ksz,stride=s,padding=pz),
                 #bn2(co),
-                nn.ReLU(True)
+                #nn.ReLU(True)
+                nn.LeakyReLU(0.2, True)
                 )
         self.m = nn.Sequential(
             convbn(c,c1,3,2,1),
             convbn(c1,c1,3,1,1),
             convbn(c1,c1,3,2,1),
-            nn.Dropout(opt['d']),
+            #nn.Dropout(opt['d']),
             convbn(c1,c2,3,1,1),
             convbn(c2,c2,3,2,1),
             convbn(c2,c2,3,1,1),
-            nn.Dropout(opt['d']),
             convbn(c2,1,3,2,1),
+            nn.Dropout(opt['d']),
             #convbn(c2,output_dim,3,2,1),
             #convbn(c2,output_dim,1,1))
             #nn.AvgPool2d((6, 40)),
-            View(11*80),
-            nn.Linear(11*80, output_dim),
+            View(12*80),
+            nn.Linear(12*80, output_dim),
             nn.Sigmoid())
 
     def forward(self, x):
