@@ -9,10 +9,14 @@ import os
 def build_dirname(opt, keys):
     sub_dict = dict((k, opt[k]) for k in keys)
     th = time.asctime().split(' ')
+    try:
+        th.remove('')
+    except:
+        pass
     date_time = '[' + th[1] + '_' + th[2] + '_' + th[3] + ']'
     params = str(sub_dict).replace(" ", "")
-    dirname = date_time + '_par_' + params
-    return dirname
+    filename = date_time + '_par_' + params
+    return filename
 
 
 def make_save_directory(opt, dirname):

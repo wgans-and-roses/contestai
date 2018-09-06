@@ -1,5 +1,5 @@
 import torch.nn as nn
-
+import torchvision.models as models
 
 class View(nn.Module):
     def __init__(self,o):
@@ -12,6 +12,15 @@ class View(nn.Module):
 
 def num_parameters(model):
     return sum([w.numel() for w in model.parameters()])
+
+
+def get_model(name):
+    models = {}
+    models['lenet'] = Lenet
+    models['allcnn'] = Allcnn
+    models['alexnet'] = Alexnet
+    models['alexnetall'] = AlexnetAllcnn
+    return models[name]
 
 
 class Lenet(nn.Module):
@@ -74,7 +83,7 @@ class Allcnn(nn.Module):
                 nn.Conv2d(ci,co,ksz,stride=s,padding=pz),
                 #bn2(co),
                 #nn.ReLU(True)
-                nn.LeakyReLU(0.2, True)
+                nn.LeakyReLU(True)
                 )
         self.m = nn.Sequential(
             convbn(c,c1,3,2,1),
@@ -95,3 +104,68 @@ class Allcnn(nn.Module):
 
     def forward(self, x):
         return self.m(x)
+
+
+class Alexnet(nn.Module):
+    name = 'alexnet'
+    def __init__(self, opt):
+        super().__init__()
+        model = models.alexnet(pretrained=opt['pretrained'])
+
+        relu = ['1', '4', '7', '9', '11']
+        for i in relu:
+            model.features._modules[i] = nn.LeakyReLU(inplace=True)
+
+        self.features = model.features
+
+        self.classifier = nn.Sequential(
+            nn.Conv2d(256, 32, kernel_size=(4, 4), stride=(1, 4), padding=(1, 1)),
+            nn.LeakyReLU(inplace=True),
+            View(32*3*10),
+            nn.Linear(in_features=32*3*10, out_features=int(64)),
+            nn.LeakyReLU(inplace=True),
+            nn.Linear(in_features=int(64), out_features=1),
+            nn.Sigmoid()
+        )
+
+        self.Nf = num_parameters(self.features)
+        self.Nc =  num_parameters(self.classifier)
+        s = '[%s] Features parameters: %d, Classifier Parameters: %d' % (self.name, self.Nf, self.Nc)
+        print(s)
+
+    def forward(self, x):
+        x = self.features(x)
+        return self.classifier(x)
+
+
+class AlexnetAllcnn(nn.Module):
+    name = 'alexnetall'
+    def __init__(self, opt):
+        super().__init__()
+        model = models.alexnet(pretrained=opt['pretrained'])
+
+        relu = ['1', '4', '7', '9', '11']
+        for i in relu:
+            model.features._modules[i] = nn.LeakyReLU(inplace=True)
+
+        self.features = model.features
+
+        self.classifier = nn.Sequential(
+            nn.Conv2d(256, 128, kernel_size=(3, 3), stride=(1, 2), padding=(1, 1)),
+            nn.LeakyReLU(inplace=True),
+            nn.Dropout(opt['d']),
+            nn.Conv2d(128, 1, kernel_size=(3, 3), stride=(1, 2), padding=(1, 1)),
+            nn.LeakyReLU(inplace=True),
+            View(4*10),
+            nn.Linear(in_features=4*10, out_features=1),
+            nn.Sigmoid()
+        )
+
+        self.Nf = num_parameters(self.features)
+        self.Nc =  num_parameters(self.classifier)
+        s = '[%s] Features parameters: %d, Classifier Parameters: %d' % (self.name, self.Nf, self.Nc)
+        print(s)
+
+    def forward(self, x):
+        x = self.features(x)
+        return self.classifier(x)
